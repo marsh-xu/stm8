@@ -42,7 +42,8 @@
 #define LED5_PIN  (GPIO_PIN_1)
 
 #define BUTTON_PORT (GPIOB)
-#define BUTTON_PIN  (GPIO_PIN_0)
+#define BUTTON_PIN1  (GPIO_PIN_6)
+#define BUTTON_PIN2  (GPIO_PIN_7)
 
 /* Private macro -------------------------------------------------------------*/
 
@@ -51,7 +52,6 @@ void Delay (u16 nCount);
 
 /* Private functions ---------------------------------------------------------*/
 /* Public variables ---------------------------------------------------------*/
-extern u8 ButtonState;
 
 /* Public functions ----------------------------------------------------------*/
 
@@ -70,10 +70,10 @@ void main(void)
   GPIO_Init(LEDS_PORT, (LED2_PIN | LED3_PIN | LED4_PIN | LED5_PIN), GPIO_MODE_OUT_PP_LOW_FAST);
 
   /* Initialize PB0 (BUTTON) in Input Floating Mode with Interrupt */
-  GPIO_Init(BUTTON_PORT, BUTTON_PIN, GPIO_MODE_IN_FL_IT);
+  GPIO_Init(BUTTON_PORT, (BUTTON_PIN1 | BUTTON_PIN2), GPIO_MODE_IN_PU_IT);
 
   /* Initialize the Interrupt sensitivity */
-  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOB, EXTI_SENSITIVITY_FALL_ONLY);
+  EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOB, EXTI_SENSITIVITY_RISE_FALL);
 
   enableInterrupts();
 
@@ -81,25 +81,6 @@ void main(void)
 
   while (1)
   {
-    /* Check button status */
-    if (ButtonState == (u8)0x00)
-    {
-      Leds = (LED2_PIN | LED5_PIN);
-    }
-    else
-    {
-      Leds = (LED3_PIN | LED4_PIN);
-    }
-		
-    /* LEDs ON */
-    GPIO_WriteHigh(LEDS_PORT, Leds);
-    
-		Delay((u16)120000);
-    
-		/* LEDs OFF */
-    GPIO_WriteLow(LEDS_PORT, Leds);
-    
-		Delay((u16)120000);
   }
 
 }
