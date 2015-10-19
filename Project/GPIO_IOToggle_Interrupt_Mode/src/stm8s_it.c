@@ -20,33 +20,19 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "button.h"
 #include "stm8s_it.h"
-#include "stm8s.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Public variables ----------------------------------------------------------*/
-
+u32 int_timers = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
-
-#define LED1_PORT (GPIOD)
-#define LEDS_PORT (GPIOB)
-#define LED1_PIN	(GPIO_PIN_0)
-#define LED2_PIN  (GPIO_PIN_4)
-#define LED3_PIN  (GPIO_PIN_3)
-#define LED4_PIN  (GPIO_PIN_2)
-#define LED5_PIN  (GPIO_PIN_1)
-
-#define BUTTON_PORT (GPIOB)
-#define BUTTON_PIN1  (GPIO_PIN_6)
-#define BUTTON_PIN2  (GPIO_PIN_7)
-
-extern void Delay(u16 nCount);
 
 /** @addtogroup IT_Functions
   * @{
@@ -181,19 +167,9 @@ void EXTI_PORTA_IRQHandler(void) interrupt 3
 void EXTI_PORTB_IRQHandler(void) interrupt 4
 #endif /* _COSMIC_ */
 {	
-	u8 Led = GPIO_PIN_1;
 	/* Each time an interrupt is asserted from PB0, EXTI_PORTB_IRQHandler() is called
 	and the status flag ButtonState is one-complemented */
-
-	/* LEDs ON */
-	GPIO_WriteHigh(LEDS_PORT, Led);
-
-	Delay((u16)120000);
-
-	/* LEDs OFF */
-	GPIO_WriteLow(LEDS_PORT, Led);
-
-	Delay((u16)120000);
+	button_event_handler();
 }
 
 /**
@@ -341,6 +317,12 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) interrupt 11
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
+	int_timers ++;
+	if (int_timers == (10000))
+	{
+		int_timers = 0;
+		timer1_timeout_handler();
+	}
 }
 
 /**

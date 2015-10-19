@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm8s.h"
+#include "stm8s_clk.h"
 
 /**
   * @addtogroup GPIO_IOToggle_Interrupt_Mode
@@ -33,12 +34,8 @@
 
 /* Evalboard I/Os configuration */
 
-#define LED1_PORT (GPIOD)
 #define LEDS_PORT (GPIOB)
-#define LED1_PIN	(GPIO_PIN_0)
-#define LED2_PIN  (GPIO_PIN_4)
-#define LED3_PIN  (GPIO_PIN_3)
-#define LED4_PIN  (GPIO_PIN_2)
+
 #define LED5_PIN  (GPIO_PIN_1)
 
 #define BUTTON_PORT (GPIOB)
@@ -59,15 +56,18 @@ void Delay (u16 nCount);
   * @brief Example firmware main entry point.
   * @par Parameters:
   * None
-  * @retval 
+  * @retval
   * None
   */
 void main(void)
 {
-  u8 Leds; /* Contains which LEDs to operate */
+  CLK_DeInit();
+  CLK_HSICmd(ENABLE);
+  CLK_SYSCLKConfig(CLK_PRESCALER_HSIDIV8);
+  CLK_PeripheralClockConfig(CLK_PERIPHERAL_TIMER1, ENABLE);
 
   /* Initialize LEDs in Output Push-Pull Mode */
-  GPIO_Init(LEDS_PORT, (LED2_PIN | LED3_PIN | LED4_PIN | LED5_PIN), GPIO_MODE_OUT_PP_LOW_FAST);
+  GPIO_Init(LEDS_PORT, (LED5_PIN), GPIO_MODE_OUT_PP_LOW_FAST);
 
   /* Initialize PB0 (BUTTON) in Input Floating Mode with Interrupt */
   GPIO_Init(BUTTON_PORT, (BUTTON_PIN1 | BUTTON_PIN2), GPIO_MODE_IN_PU_IT);
@@ -88,7 +88,7 @@ void main(void)
 /**
   * @brief Delay.
   * @param[in] nCount
-  * @retval 
+  * @retval
   * None
   */
 void Delay(u16 nCount)
@@ -110,11 +110,11 @@ void Delay(u16 nCount)
   *   where the assert_param error has occurred.
   * @param file: pointer to the source file name
   * @param line: assert_param error line source number
-  * @retval 
+  * @retval
   * None
   */
 void assert_failed(u8* file, u32 line)
-{ 
+{
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
