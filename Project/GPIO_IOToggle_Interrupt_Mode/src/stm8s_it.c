@@ -111,7 +111,7 @@ void TLI_IRQHandler(void) interrupt 0
 @far @interrupt void AWU_IRQHandler(void)
 #else /* _RAISONANCE_ */
 void AWU_IRQHandler(void) interrupt 1
-#endif /* _COSMIC_ */	
+#endif /* _COSMIC_ */
 {
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
@@ -166,7 +166,7 @@ void EXTI_PORTA_IRQHandler(void) interrupt 3
 #else /* _RAISONANCE_ */
 void EXTI_PORTB_IRQHandler(void) interrupt 4
 #endif /* _COSMIC_ */
-{	
+{
 	/* Each time an interrupt is asserted from PB0, EXTI_PORTB_IRQHandler() is called
 	and the status flag ButtonState is one-complemented */
 	button_event_handler();
@@ -318,7 +318,7 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) interrupt 11
      it is recommended to set a breakpoint on the following instruction.
   */
 	int_timers ++;
-	if (int_timers == (10000))
+	if (int_timers == (15000))
 	{
 		int_timers = 0;
 		timer1_timeout_handler();
@@ -610,7 +610,7 @@ void ADC2_IRQHandler(void) interrupt 22
   * @brief GPIOB interrupt routine.
   * @par Parameters:
   * None
-  * @retval 
+  * @retval
   * None
   */
 #ifdef _COSMIC_

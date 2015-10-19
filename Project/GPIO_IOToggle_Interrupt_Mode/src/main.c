@@ -63,7 +63,7 @@ void main(void)
 {
   CLK_DeInit();
   CLK_HSICmd(ENABLE);
-  CLK_SYSCLKConfig(CLK_PRESCALER_HSIDIV8);
+  //CLK_SYSCLKConfig(CLK_PRESCALER_CPUDIV4);
   CLK_PeripheralClockConfig(CLK_PERIPHERAL_TIMER1, ENABLE);
 
   /* Initialize LEDs in Output Push-Pull Mode */
