@@ -657,7 +657,7 @@ void TIM4_UPD_OVF_IRQHandler(void) interrupt 23
      it is recommended to set a breakpoint on the following instruction.
   */
 	int_timer1 ++;
-	if ((int_timer1%25) == 0)
+	if ((int_timer1%5) == 0)
 	{
 		int_timer1 = 0;
 		tick_timeout_handler();
