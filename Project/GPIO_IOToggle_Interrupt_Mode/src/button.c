@@ -2,6 +2,7 @@
 #include "stm8s_tim1.h"
 #include "stm8s_tim2.h"
 
+#include "timer.h"
 #include "button.h"
 
 #define LEDS_PORT (GPIOB)
@@ -13,8 +14,9 @@
 typedef enum button_timer_status_e
 {
     BUTTON_STATUS_INIT = 0,
-		BUTTON_STATUS_2s = 1,
-		BUTTON_STATUS_5s = 2
+		BUTTON_STATUS_LESS_2S,
+		BUTTON_STATUS_MORE_2S,
+		BUTTON_STATUS_MORE_5S
 }button_timer_status_t;
 
 typedef enum button_event_e
@@ -33,46 +35,108 @@ static button_timer_status_t  m_button_timer_status = BUTTON_STATUS_INIT;
 static bool detect_double_button_press = FALSE;
 static bool led_is_on = FALSE;
 static u8   button_status = 0xFF;
+static u8   button_first_detect_status = 0xFF;
 static bool timer_is_started = FALSE;
 static u8   timer1_index_s = 0;
 static u8   timer2_index_50ms = 0;
 
+static u8   m_timer_id_button_detet;
+static u8   m_timer_id_double_btn_detet;
+static u8   m_timer_id_debonce_detet;
+
 void Delay (u16 nCount);
-extern u32 int_timers;
 
-void start_timer1(u8 duration) // ms
+extern u32 int_timer1;
+extern u32 int_timer2;
+
+void app_button_event_handler(button_event_t button_event);
+void button1_push(void);
+void button1_release(void);
+void button2_push(void);
+void button2_release(void);
+
+static void button_duration_timeout_handler(void)
 {
-		timer1_index_s = duration;
-    TIM1_DeInit();
-    TIM1_TimeBaseInit(0x8, TIM1_COUNTERMODE_UP, 125, 3); // (1/4MHz)*32*125 = 1mS
-    TIM1_SetCounter(0); // T = n * 1mS
-    TIM1_ITConfig(TIM1_IT_UPDATE, ENABLE); //Enable TIM4 IT UPDATE
-    TIM1_Cmd(ENABLE); //Enable TIM4
+	switch (m_button_timer_status)
+	{
+		case BUTTON_STATUS_INIT:
+			{
+				break;
+			}
+		case BUTTON_STATUS_LESS_2S:
+			{
+				timer_start(m_timer_id_button_detet, 60);
+				m_button_timer_status = BUTTON_STATUS_MORE_2S;
+				break;
+			}
+		case BUTTON_STATUS_MORE_2S:
+			{
+				m_button_timer_status = BUTTON_STATUS_MORE_5S;
+				break;
+			}
+		default:
+			{
+				break;
+			}
+	}
 }
 
-void start_timer2(u8 duration) // 50ms
+void double_btn_timeout_handler(void)
 {
-		timer2_index_50ms = duration;
-    TIM1_DeInit();
-    TIM1_TimeBaseInit(0x8, TIM1_COUNTERMODE_UP, 125, 3); // (1/4MHz)*32*125 = 1mS
-    TIM1_SetCounter(0); // T = n * 1mS
-    TIM1_ITConfig(TIM1_IT_UPDATE, ENABLE); //Enable TIM4 IT UPDATE
-    TIM1_Cmd(ENABLE); //Enable TIM4
+	button_event_t button_event = BUTTON_SHORT_PRESS;
+	detect_double_button_press = FALSE;
+	m_button_timer_status = BUTTON_STATUS_INIT;
+	timer_stop(m_timer_id_double_btn_detet);
+	app_button_event_handler(button_event);
 }
 
-void stop_timer1(void)
+void btn_debonce_timeout_handler(void)
 {
-	  timer1_index_s = 0;
-    TIM1_Cmd(DISABLE);
-    TIM1_ITConfig(TIM1_IT_UPDATE, DISABLE);
+	u8 valid_button;
+	u8 current_button;
+	u8 changed_button;
+
+	current_button = GPIO_ReadInputData(BUTTON_PORT);
+
+
+	valid_button = ~(current_button ^ button_first_detect_status);
+
+
+	changed_button = ((current_button^button_status) & valid_button);
+	button_status = current_button;
+	if ((changed_button & BUTTON_PIN1)!= 0)
+	{
+		if ((current_button & BUTTON_PIN1) == 0)
+		{
+			button1_push();
+		}
+		else
+		{
+			button1_release();
+		}
+	}
+
+	if ((changed_button & BUTTON_PIN2)!= 0)
+	{
+		if ((current_button & BUTTON_PIN2) == 0)
+		{
+			button2_push();
+		}
+		else
+		{
+			button2_release();
+		}
+	}
 }
 
-void stop_timer2(void)
+
+void button_init()
 {
-	  timer2_index_50ms = 0;
-    TIM2_Cmd(DISABLE);
-    TIM2_ITConfig(TIM1_IT_UPDATE, DISABLE);
+	timer_create(&m_timer_id_button_detet, button_duration_timeout_handler);
+	timer_create(&m_timer_id_double_btn_detet, double_btn_timeout_handler);
+	timer_create(&m_timer_id_debonce_detet, btn_debonce_timeout_handler);
 }
+
 
 void btn_short_button_press(void)
 {
@@ -141,15 +205,19 @@ void button1_push(void)
 	{
 		case BUTTON_STATUS_INIT:
 			{
-				m_button_timer_status = BUTTON_STATUS_2s;
-				start_timer1(2);
+				m_button_timer_status = BUTTON_STATUS_LESS_2S;
+				timer_start(m_timer_id_button_detet, 40);
 				break;
 			}
-		case BUTTON_STATUS_2s:
+		case BUTTON_STATUS_LESS_2S:
 			{
 				break;
 			}
-		case BUTTON_STATUS_5s:
+		case BUTTON_STATUS_MORE_2S:
+			{
+				break;
+			}
+		case BUTTON_STATUS_MORE_5S:
 			{
 				break;
 			}
@@ -169,12 +237,13 @@ void button1_release(void)
 			{
 				break;
 			}
-		case BUTTON_STATUS_2s:
+		case BUTTON_STATUS_LESS_2S:
 			{
 				if (detect_double_button_press == FALSE)
 				{
 					detect_double_button_press = TRUE;
-					start_timer2(10);  //500ms
+					timer_stop(m_timer_id_button_detet);
+					timer_start(m_timer_id_double_btn_detet,10);  //500ms
 				}
 				else
 				{
@@ -183,14 +252,25 @@ void button1_release(void)
 				}
 				break;
 			}
-		case BUTTON_STATUS_5s:
+		case BUTTON_STATUS_MORE_2S:
 			{
+				button_event = BUTTON_LONG_PRESS;
+				break;
+			}
+		case BUTTON_STATUS_MORE_5S:
+			{
+				button_event = BUTTON_VERY_LONG_PRESS;
 				break;
 			}
 		default:
 			{
 				break;
 			}
+	}
+	m_button_timer_status = BUTTON_STATUS_INIT;
+	if (button_event != BUTTON_INVALID)
+	{
+		app_button_event_handler(button_event);
 	}
 }
 
@@ -204,98 +284,6 @@ void button2_release(void)
 
 void button_event_handler(void)
 {
-	u8 changed_button;
-	u8 current_button;
-	u8 delay_button;
-	u8 valid_button;
-	
-	current_button = GPIO_ReadInputData(BUTTON_PORT);
-	valid_button = ~(current_button ^ delay_button);
-	
-	
-	changed_button = (current_button^button_status);
-	button_status = current_button;
-	if ((changed_button & BUTTON_PIN1)!= 0)
-	{
-		if ((current_button & BUTTON_PIN1) == 0)
-		{
-			button1_push();
-		}
-		else
-		{
-			button1_release();
-		}
-	}
-	
-	if ((changed_button & BUTTON_PIN2)!= 0)
-	{
-		if ((current_button & BUTTON_PIN2) == 0)
-		{
-			button2_push();
-		}
-		else
-		{
-			button2_release();
-		}
-	}
-}
-
-
-void timer1_event_handler(void)
-{
-	stop_timer1();
-	switch (m_button_timer_status)
-	{
-		case BUTTON_STATUS_INIT:
-			{
-				start_timer1(3);
-				m_button_timer_status = BUTTON_STATUS_2s;
-				break;
-			}
-		case BUTTON_STATUS_2s:
-			{
-				m_button_timer_status = BUTTON_STATUS_5s;
-				break;
-			}
-		case BUTTON_STATUS_5s:
-			{
-				m_button_timer_status = BUTTON_STATUS_5s;
-				break;
-			}
-		default:
-			{
-				break;
-			}
-	}
-}
-
-void timer2_event_handler(void)
-{
-	button_event_t button_event = BUTTON_SHORT_PRESS;
-	detect_double_button_press = FALSE;
-	stop_timer2();
-	app_button_event_handler(button_event);
-}
-
-
-void timer1_timeout_handler(void)
-{
-	  timer1_index_s = timer1_index_s - 1;
-		
-		if (timer1_index_s <= 0)
-		{
-			  stop_timer1();
-				timer1_event_handler();
-		}
-}
-
-void timer2_timeout_handler(void)
-{
-	  timer2_index_50ms = timer2_index_50ms - 1;
-		
-		if (timer2_index_50ms <= 0)
-		{
-			  stop_timer2();
-				timer2_event_handler();
-		}
+	button_first_detect_status = GPIO_ReadInputData(BUTTON_PORT);
+	timer_start(m_timer_id_debonce_detet, 1);
 }

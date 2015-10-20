@@ -22,6 +22,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm8s.h"
 #include "stm8s_clk.h"
+#include "timer.h"
+#include "button.h"
 
 /**
   * @addtogroup GPIO_IOToggle_Interrupt_Mode
@@ -52,20 +54,17 @@ void Delay (u16 nCount);
 
 /* Public functions ----------------------------------------------------------*/
 
-/**
-  * @brief Example firmware main entry point.
-  * @par Parameters:
-  * None
-  * @retval
-  * None
-  */
-void main(void)
+void clock_init(void)
 {
   CLK_DeInit();
   CLK_HSICmd(ENABLE);
-  //CLK_SYSCLKConfig(CLK_PRESCALER_CPUDIV4);
+  CLK_SYSCLKConfig(CLK_PRESCALER_HSIDIV4);
   CLK_PeripheralClockConfig(CLK_PERIPHERAL_TIMER1, ENABLE);
+  CLK_PeripheralClockConfig(CLK_PERIPHERAL_TIMER4, ENABLE);
+}
 
+void pin_init(void)
+{
   /* Initialize LEDs in Output Push-Pull Mode */
   GPIO_Init(LEDS_PORT, (LED5_PIN), GPIO_MODE_OUT_PP_LOW_FAST);
 
@@ -76,8 +75,22 @@ void main(void)
   EXTI_SetExtIntSensitivity(EXTI_PORT_GPIOB, EXTI_SENSITIVITY_RISE_FALL);
 
   enableInterrupts();
+}
 
-  /* Toggles LEDs */
+
+/**
+  * @brief Example firmware main entry point.
+  * @par Parameters:
+  * None
+  * @retval
+  * None
+  */
+void main(void)
+{
+  clock_init();
+  timer_init();
+	button_init();
+  pin_init();
 
   while (1)
   {

@@ -21,6 +21,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "button.h"
+#include "timer.h"
 #include "stm8s_it.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -318,12 +319,6 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) interrupt 11
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
-	int_timer1 ++;
-	if (int_timer1 == (15000))
-	{
-		int_timer1 = 0;
-		timer1_timeout_handler();
-	}
 }
 
 /**
@@ -397,12 +392,6 @@ void TIM2_UPD_OVF_BRK_IRQHandler(void) interrupt 13
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
-	int_timer2 ++;
-	if (int_timer1 == (15*50))
-	{
-		int_timer2 = 0;
-		timer2_timeout_handler();
-	}
 }
 
 /**
@@ -667,6 +656,13 @@ void TIM4_UPD_OVF_IRQHandler(void) interrupt 23
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
+	int_timer1 ++;
+	if ((int_timer1%25) == 0)
+	{
+		int_timer1 = 0;
+		tick_timeout_handler();
+	}
+	TIM4_ClearITPendingBit(TIM4_IT_UPDATE);
 }
 #endif /*STM8S903*/
 
