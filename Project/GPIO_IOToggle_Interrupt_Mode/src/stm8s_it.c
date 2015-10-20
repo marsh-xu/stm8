@@ -28,7 +28,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Public variables ----------------------------------------------------------*/
-u32 int_timers = 0;
+u32 int_timer1 = 0;
+u32 int_timer2 = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -317,10 +318,10 @@ void TIM1_UPD_OVF_TRG_BRK_IRQHandler(void) interrupt 11
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
-	int_timers ++;
-	if (int_timers == (15000))
+	int_timer1 ++;
+	if (int_timer1 == (15000))
 	{
-		int_timers = 0;
+		int_timer1 = 0;
 		timer1_timeout_handler();
 	}
 }
@@ -396,6 +397,12 @@ void TIM2_UPD_OVF_BRK_IRQHandler(void) interrupt 13
   /* In order to detect unexpected events during development,
      it is recommended to set a breakpoint on the following instruction.
   */
+	int_timer2 ++;
+	if (int_timer1 == (15*50))
+	{
+		int_timer2 = 0;
+		timer2_timeout_handler();
+	}
 }
 
 /**

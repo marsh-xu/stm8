@@ -3,5 +3,6 @@
 
 void button_event_handler(void);
 void timer1_timeout_handler(void);
+void timer2_timeout_handler(void);
 
 #endif // BUTTON_H_
