@@ -57,6 +57,7 @@ void button2_release(void);
 
 static void button_duration_timeout_handler(void)
 {
+	button_event_t button_event = BUTTON_INVALID;
 	switch (m_button_timer_status)
 	{
 		case BUTTON_STATUS_INIT:
@@ -65,12 +66,14 @@ static void button_duration_timeout_handler(void)
 			}
 		case BUTTON_STATUS_LESS_2S:
 			{
+				button_event = BUTTON_LONG_HOLD;
 				timer_start(m_timer_id_button_detet, 300);
 				m_button_timer_status = BUTTON_STATUS_MORE_2S;
 				break;
 			}
 		case BUTTON_STATUS_MORE_2S:
 			{
+				button_event = BUTTON_VERY_LONG_HOLD;
 				m_button_timer_status = BUTTON_STATUS_MORE_5S;
 				break;
 			}
@@ -78,6 +81,10 @@ static void button_duration_timeout_handler(void)
 			{
 				break;
 			}
+	}
+	if (button_event != BUTTON_INVALID)
+	{
+		app_button_event_handler(button_event);
 	}
 }
 
@@ -158,6 +165,30 @@ void btn_double_button_press(void)
 		GPIO_WriteLow(LEDS_PORT, Led);
 }
 
+void btn_long_hold_press(void)
+{
+		u8 Led = GPIO_PIN_1;
+		GPIO_WriteHigh(LEDS_PORT, Led);
+		Delay(10000);
+		GPIO_WriteLow(LEDS_PORT, Led);
+}
+
+void btn_long_press(void)
+{
+}
+
+void btn_very_long_hold_press(void)
+{
+		u8 Led = GPIO_PIN_1;
+		GPIO_WriteHigh(LEDS_PORT, Led);
+		Delay(10000);
+		GPIO_WriteLow(LEDS_PORT, Led);
+}
+
+void btn_very_long_press(void)
+{
+}
+
 void app_button_event_handler(button_event_t button_event)
 {
 	switch (button_event)
@@ -178,18 +209,22 @@ void app_button_event_handler(button_event_t button_event)
 		}
 		case BUTTON_LONG_HOLD:
 		{
+			btn_long_hold_press();
 			break;
 		}
 		case BUTTON_LONG_PRESS:
 		{
+			btn_long_press();
 			break;
 		}
 		case BUTTON_VERY_LONG_HOLD:
 		{
+			btn_very_long_hold_press();
 			break;
 		}
 		case BUTTON_VERY_LONG_PRESS:
 		{
+			btn_very_long_press();
 			break;
 		}
 		default:
@@ -201,30 +236,11 @@ void app_button_event_handler(button_event_t button_event)
 
 void button1_push(void)
 {
-	switch (m_button_timer_status)
+	timer_stop(m_timer_id_button_detet);
+	if (m_button_timer_status != BUTTON_STATUS_LESS_2S)
 	{
-		case BUTTON_STATUS_INIT:
-			{
-				m_button_timer_status = BUTTON_STATUS_LESS_2S;
-				timer_start(m_timer_id_button_detet, 200);
-				break;
-			}
-		case BUTTON_STATUS_LESS_2S:
-			{
-				break;
-			}
-		case BUTTON_STATUS_MORE_2S:
-			{
-				break;
-			}
-		case BUTTON_STATUS_MORE_5S:
-			{
-				break;
-			}
-		default:
-			{
-				break;
-			}
+		m_button_timer_status = BUTTON_STATUS_LESS_2S;
+		timer_start(m_timer_id_button_detet, 200);
 	}
 }
 
@@ -243,12 +259,13 @@ void button1_release(void)
 				if (detect_double_button_press == FALSE)
 				{
 					detect_double_button_press = TRUE;
-					timer_start(m_timer_id_double_btn_detet,50);  //500ms
+					timer_start(m_timer_id_double_btn_detet,100);  //500ms
 				}
 				else
 				{
 					button_event = BUTTON_DOUBLE_PRESS;
 					detect_double_button_press = FALSE;
+					timer_stop(m_timer_id_double_btn_detet);
 				}
 				break;
 			}
