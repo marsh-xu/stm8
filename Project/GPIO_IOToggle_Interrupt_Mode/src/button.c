@@ -11,6 +11,11 @@
 #define BUTTON_PIN1  (GPIO_PIN_6)
 #define BUTTON_PIN2  (GPIO_PIN_7)
 
+#define BUTTON_DEBONCE_DURATION    3    // The unit is 10 ms, so the duration is 30 ms.
+#define BUTTON_WAIT_2S             200  // The unit is 10 ms, so the duration is 2 s.
+#define BUTTON_WAIT_3S             300  // The unit is 10 ms, so the duration is 3 s.
+#define BUTTON_DOUBLE_BTN_DURATION 50   // The unit is 10 ms, so the duration is 500 ms.
+
 typedef enum button_timer_status_e
 {
 	BUTTON_STATUS_INIT = 0,
@@ -76,7 +81,7 @@ static void button1_duration_timeout_handler(void)
 		case BUTTON_STATUS_LESS_2S:
 			{
 				button_event = BUTTON1_LONG_HOLD;
-				timer_start(m_timer_id_button1_detet, 300);
+				timer_start(m_timer_id_button1_detet, BUTTON_WAIT_3S);
 				m_button1_timer_status = BUTTON_STATUS_MORE_2S;
 				break;
 			}
@@ -109,7 +114,7 @@ static void button2_duration_timeout_handler(void)
 		case BUTTON_STATUS_LESS_2S:
 			{
 				button_event = BUTTON2_LONG_HOLD;
-				timer_start(m_timer_id_button2_detet, 300);
+				timer_start(m_timer_id_button2_detet, BUTTON_WAIT_3S);
 				m_button2_timer_status = BUTTON_STATUS_MORE_2S;
 				break;
 			}
@@ -367,7 +372,7 @@ void button1_push(void)
 	if (m_button1_timer_status != BUTTON_STATUS_LESS_2S)
 	{
 		m_button1_timer_status = BUTTON_STATUS_LESS_2S;
-		timer_start(m_timer_id_button1_detet, 200);
+		timer_start(m_timer_id_button1_detet, BUTTON_WAIT_2S);
 	}
 }
 
@@ -386,7 +391,7 @@ void button1_release(void)
 				if (detect_double_button1_press == FALSE)
 				{
 					detect_double_button1_press = TRUE;
-					timer_start(m_timer_id_double_btn1_detet,100);  //500ms
+					timer_start(m_timer_id_double_btn1_detet,BUTTON_DOUBLE_BTN_DURATION);  //500ms
 				}
 				else
 				{
@@ -424,7 +429,7 @@ void button2_push(void)
 	if (m_button2_timer_status != BUTTON_STATUS_LESS_2S)
 	{
 		m_button2_timer_status = BUTTON_STATUS_LESS_2S;
-		timer_start(m_timer_id_button2_detet, 200);
+		timer_start(m_timer_id_button2_detet, BUTTON_WAIT_2S);
 	}
 }
 
@@ -443,7 +448,7 @@ void button2_release(void)
 				if (detect_double_button2_press == FALSE)
 				{
 					detect_double_button2_press = TRUE;
-					timer_start(m_timer_id_double_btn2_detet,100);  //500ms
+					timer_start(m_timer_id_double_btn2_detet,BUTTON_DOUBLE_BTN_DURATION);  //500ms
 				}
 				else
 				{
@@ -478,5 +483,5 @@ void button2_release(void)
 void button_event_handler(void)
 {
 	button_first_detect_status = GPIO_ReadInputData(BUTTON_PORT);
-	timer_start(m_timer_id_debonce_detet, 3);
+	timer_start(m_timer_id_debonce_detet, BUTTON_DEBONCE_DURATION);
 }
